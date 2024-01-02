@@ -13,11 +13,11 @@ using namespace std;
 
 struct Candlestick {
     double open, close, high, low, volume;
-    int year, month, day, up, down;
+    int year, month, day, wick, top, bottom, shadow;
 };
 
 
-void loadDataFromFile(Candlestick*& data, int& dataSize);
+void loadDataFromFile(Candlestick*& data, int& dataSize, int height = 50);
 void generateCandlestickChart(const Candlestick* data, int dataSize, int height = 50, int range = 200);
 void cleanupData(Candlestick*& data);
 
@@ -41,7 +41,7 @@ int main()
 }
 
 
-void loadDataFromFile(Candlestick*& data, int& dataSize)
+void loadDataFromFile(Candlestick*& data, int& dataSize, int height)
 
 {
     fstream file;
@@ -133,6 +133,12 @@ void loadDataFromFile(Candlestick*& data, int& dataSize)
         buf[sizeof(buf) - 1] = '\0';
         data[index].volume = stod(buf);
 
+        data[index].wick = round(data[index].high);
+        data[index].top = round(data[index].open);
+        data[index].bottom = round(data[index].close);
+        data[index].shadow = round(data[index].low);
+
+
 
         index++;
     }
@@ -142,33 +148,44 @@ void loadDataFromFile(Candlestick*& data, int& dataSize)
 }
 
 
-void generateCandlestickChart(const Candlestick* data, int dataSize, int height, int range)
-{
+void generateCandlestickChart(const Candlestick* data, int dataSize, int height, int range) {
     char letter;
     ofstream file;
 
     file.open("graph.txt");
 
 
-    for (int i = 0; i < height; ++i)
-    {
-        for(int j = 1; j < range + 1; ++j)
-        {
-            if (data[j].open - data[j].close < 0)
+    for (int i = 0; i < height; ++i) {
+        for (int j = range; j > 0; --j) {
+            bool check = false;
+            if (data[j].top - data[j].bottom < 0)
                 letter = '#';
             else
-                letter = 'O';
+                letter = '0';
 
-            if ((round(data[j].high) - round(data[j].open) > 0) && (height - (i + 1) >= round(data[j].high)) && (height - (i + 1) < round(data[j].open)))
-                file << '|';
-            else if ((round(data[j].open) - round(data[j].close) != 0) && (height - (i + 1) >= round(data[j].open)) && (height - (i + 1) < round(data[j].close)))
+            if((data[j].shadow == data[j].bottom || data[j].top == data[j].wick) && (data[j].shadow == i || data[j].wick == i))
                 file << letter;
-            else if ((round(data[j].close) - round(data[j].low) > 0) && (height - (i + 1) >= round(data[j].close)) && (height - (i + 1) < round(data[j].low)))
+
+            else if ((data[j].wick - data[j].top > 0) && (height - i <= data[j].wick) && (height - i  > data[j].top))
+            {
                 file << '|';
-            else
+                !check;
+            } else if ((data[j].top - data[j].bottom != 0) && (height - i  <= data[j].top) && (height - i  > data[j].bottom)) {
+                file << letter;
+                !check;
+            } else if ((data[j].bottom - data[j].shadow > 0) && (height - i  >= data[j].shadow) && (height - i  <= round(data[j].bottom))) {
+                file << '|';
+                !check;
+            }
+
+            else {
                 file << ' ';
+                !check;
+            }
         }
         file << endl;
+
+
     }
 }
 
