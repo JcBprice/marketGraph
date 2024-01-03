@@ -13,7 +13,7 @@ using namespace std;
 
 struct Candlestick {
     double open, close, high, low, volume;
-    int year, month, day, wick, top, bottom, shadow;
+    int year, month, day, wick, top, bottom, shadow, index;
 };
 
 
@@ -133,6 +133,7 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, int height)
         buf[sizeof(buf) - 1] = '\0';
         data[index].volume = stod(buf);
 
+        data[index].index = index;
         data[index].wick = round(data[index].high);
         data[index].top = round(data[index].open);
         data[index].bottom = round(data[index].close);
@@ -155,37 +156,31 @@ void generateCandlestickChart(const Candlestick* data, int dataSize, int height,
     file.open("graph.txt");
 
 
-    for (int i = 0; i < height; ++i) {
-        for (int j = range; j > 0; --j) {
-            bool check = false;
-            if (data[j].top - data[j].bottom < 0)
+    for (int i = 0; i < height; ++i)
+    {
+        for (int j = dataSize - range; j + 1 < dataSize; ++j)
+        {
+            int actualValue = height - i;
+            int mline = i + 1; // do debuggera; usunąć
+
+            if (data[j].top - data[j].bottom > 0)
                 letter = '#';
             else
                 letter = '0';
 
-            if((data[j].shadow == data[j].bottom || data[j].top == data[j].wick) && (data[j].shadow == i || data[j].wick == i))
-                file << letter;
 
-            else if ((data[j].wick - data[j].top > 0) && (height - i <= data[j].wick) && (height - i  > data[j].top))
-            {
-                file << '|';
-                !check;
-            } else if ((data[j].top - data[j].bottom != 0) && (height - i  <= data[j].top) && (height - i  > data[j].bottom)) {
+           if (((actualValue  >= data[j].top) && (actualValue  <= data[j].bottom)) || ((actualValue  <= data[j].top) && (actualValue  >= data[j].bottom))) {
                 file << letter;
-                !check;
-            } else if ((data[j].bottom - data[j].shadow > 0) && (height - i  >= data[j].shadow) && (height - i  <= round(data[j].bottom))) {
-                file << '|';
-                !check;
-            }
-
-            else {
+            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
+           {
+               file << '|';
+           }
+           else {
                 file << ' ';
-                !check;
             }
+           mline++; // ** do wyrzucenia
         }
         file << endl;
-
-
     }
 }
 
