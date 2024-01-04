@@ -158,10 +158,10 @@ void generateCandlestickChart(const Candlestick* data, int dataSize, int height,
 
     for (int i = 0; i < height; ++i)
     {
+        int mline = i + 1; // do debuggera; usunąć
         for (int j = dataSize - range; j + 1 < dataSize; ++j)
         {
-            int actualValue = height - i;
-            int mline = i + 1; // do debuggera; usunąć
+            int actualValue = height - (i + 1);
 
             if (data[j].top - data[j].bottom > 0)
                 letter = '#';
@@ -169,18 +169,18 @@ void generateCandlestickChart(const Candlestick* data, int dataSize, int height,
                 letter = '0';
 
 
-           if (((actualValue  >= data[j].top) && (actualValue  <= data[j].bottom)) || ((actualValue  <= data[j].top) && (actualValue  >= data[j].bottom))) {
+            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom)) {
                 file << letter;
-            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
-           {
-               file << '|';
-           }
-           else {
+            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
+            {
+                file << '|';
+            }
+            else {
                 file << ' ';
             }
-           mline++; // ** do wyrzucenia
         }
         file << endl;
+
     }
 }
 
