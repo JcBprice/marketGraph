@@ -3,36 +3,31 @@
 #include <sstream>
 #include <cmath>
 #include <cstring>
-#include <cstdlib>
-
 
 using namespace std;
-
-
-
 
 struct Candlestick {
     double open, close, high, low, volume;
     int year, month, day, wick, top, bottom, shadow, index;
 };
 
-
-void loadDataFromFile(Candlestick*& data, int& dataSize, int height = 50);
-void generateCandlestickChart(const Candlestick* data, int dataSize, int height = 50, int range = 200);
+void menu(string& fileName, string& graphName);
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int height = 50);
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int height = 50, int range = 200);
 void cleanupData(Candlestick*& data);
 
-
-
-
-int main()
-
-{
+int main() {
     Candlestick* stockData = nullptr;
     int dataSize = 10000;
-    loadDataFromFile(stockData, dataSize);
+    string fileName = "intc_us_data.csv";
+    string graphName = "graph.txt";
+
+
+    menu(fileName, graphName);
+    loadDataFromFile(stockData, dataSize, fileName);
 
     // Wywołaj funkcję generującą wykres
-    generateCandlestickChart(stockData, dataSize);
+    generateCandlestickChart(stockData, dataSize, graphName);
 
     // Zwolnij pamięć
     cleanupData(stockData);
@@ -40,19 +35,27 @@ int main()
     return 0;
 }
 
+void menu(string& fileName, string& graphName) {
+    cout << "-----------------------------marketGraph-----------------------------\n\n\n\n\n";
+    cout << "If you want to see default graph \"intc_us_data.csv\" type: D/Default\n";
+    cout << "Type file name: ";    cin >> fileName;
+    cout << "Type graph (.txt) file name: ";    cin >> graphName;
+    if(fileName == "d" || fileName == "D" || fileName == "default" || fileName == "Default")
+    {
+        fileName = "intc_us_data.csv";
+        graphName = "graph.txt";
+    }
+}
 
-void loadDataFromFile(Candlestick*& data, int& dataSize, int height)
 
-{
+
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int height) {
     fstream file;
-    file.open("intc_us_data.csv", ios::in);
+    file.open(fileName, ios::in);
 
     bool isOpen = file.is_open();
 
-
-    if (!isOpen)
-
-    {
+    if (!isOpen) {
         cout << "Błąd otwarcia pliku." << endl;
         return;
     }
@@ -62,34 +65,25 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, int height)
     // Wczytaj dane z pliku CSV
     getline(file, line); // Pomijamy nagłówek
 
-
-    while (getline(file, line))
-    {
+    while (getline(file, line)) {
         dataSize++;
     }
-
 
     file.clear();
     file.seekg(0, ios::beg); // Przewiń na początek pliku
 
-
     data = new Candlestick[dataSize + 1];
 
-
     int index = 0;
-    while (getline(file, line))
-    {
-        if (line == "Date,Open,High,Low,Close,Volume")
-        {
+    while (getline(file, line)) {
+        if (line == "Date,Open,High,Low,Close,Volume") {
             index++;
             continue;
         }
 
-
         string value;
         char buf[20];
         int a;
-
 
         istringstream ss(line);
 
@@ -144,30 +138,22 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, int height)
         index++;
     }
 
-
     file.close();
 }
 
-
-void generateCandlestickChart(const Candlestick* data, int dataSize, int height, int range) {
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int height, int range) {
     char letter;
     ofstream file;
+    file.open(graphName);
 
-    file.open("graph.txt");
-
-
-    for (int i = 0; i < height; ++i)
-    {
-        int mline = i + 1; // do debuggera; usunąć
-        for (int j = dataSize - range; j + 1 < dataSize; ++j)
-        {
+    for (int i = 0; i < height; ++i) {
+        for (int j = dataSize - range; j + 1 < dataSize; ++j) {
             int actualValue = height - (i + 1);
 
             if (data[j].top - data[j].bottom > 0)
                 letter = '#';
             else
                 letter = '0';
-
 
             if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom)) {
                 file << letter;
