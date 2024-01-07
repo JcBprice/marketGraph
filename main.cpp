@@ -11,9 +11,9 @@ struct Candlestick {
     int year, month, day, wick, top, bottom, shadow, index;
 };
 
-void menu(string& fileName, string& graphName);
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int height = 50);
-void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int height = 50, int range = 200);
+void menu(string& fileName, string& graphName, int& dataHeight);
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight);
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int range = 200);
 void cleanupData(Candlestick*& data);
 
 int main() {
@@ -21,13 +21,14 @@ int main() {
     int dataSize = 10000;
     string fileName = "intc_us_data.csv";
     string graphName = "graph.txt";
+    int dataHeight = 50;
 
 
-    menu(fileName, graphName);
-    loadDataFromFile(stockData, dataSize, fileName);
+    menu(fileName, graphName, dataHeight);
+    loadDataFromFile(stockData, dataSize, fileName, dataHeight);
 
     // Wywołaj funkcję generującą wykres
-    generateCandlestickChart(stockData, dataSize, graphName);
+    generateCandlestickChart(stockData, dataSize, graphName, dataHeight);
 
     // Zwolnij pamięć
     cleanupData(stockData);
@@ -35,21 +36,27 @@ int main() {
     return 0;
 }
 
-void menu(string& fileName, string& graphName) {
+void menu(string& fileName, string& graphName, int& dataHeight) {
     cout << "-----------------------------marketGraph-----------------------------\n\n\n\n\n";
-    cout << "If you want to see default graph \"intc_us_data.csv\" type: D/Default\n";
+    cout << "If you want to see default graph \"intc_us_data.csv\" type: \'D\'/\'d\' or \"Default\"/\"default\".\n";
     cout << "Type file name: ";    cin >> fileName;
-    cout << "Type graph (.txt) file name: ";    cin >> graphName;
     if(fileName == "d" || fileName == "D" || fileName == "default" || fileName == "Default")
     {
         fileName = "intc_us_data.csv";
         graphName = "graph.txt";
+        cout << "Type graph height [default = 50]:"; cin >> dataHeight;
+
     }
+    else
+    {
+        cout << "Type graph (.txt) file name: ";    cin >> graphName;
+    }
+
 }
 
 
 
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int height) {
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight) {
     fstream file;
     file.open(fileName, ios::in);
 
@@ -65,7 +72,8 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int he
     // Wczytaj dane z pliku CSV
     getline(file, line); // Pomijamy nagłówek
 
-    while (getline(file, line)) {
+    while (getline(file, line))
+    {
         dataSize++;
     }
 
@@ -75,8 +83,10 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int he
     data = new Candlestick[dataSize + 1];
 
     int index = 0;
-    while (getline(file, line)) {
-        if (line == "Date,Open,High,Low,Close,Volume") {
+    while (getline(file, line))
+    {
+        if (line == "Date,Open,High,Low,Close,Volume")
+        {
             index++;
             continue;
         }
@@ -105,22 +115,22 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int he
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].open = stod(buf);
+        data[index].open = stod(buf) * (dataHeight / 50);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].high = stod(buf);
+        data[index].high = stod(buf) * (dataHeight / 50);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].low = stod(buf);
+        data[index].low = stod(buf) * (dataHeight / 50);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].close = stod(buf);
+        data[index].close = stod(buf) * (dataHeight / 50);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
@@ -141,27 +151,30 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int he
     file.close();
 }
 
-void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int height, int range) {
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int range) {
     char letter;
     ofstream file;
     file.open(graphName);
 
-    for (int i = 0; i < height; ++i) {
-        for (int j = dataSize - range; j + 1 < dataSize; ++j) {
-            int actualValue = height - (i + 1);
+    for (int i = 0; i < dataHeight; ++i)
+    {
+        for (int j = dataSize - range; j + 1 < dataSize; ++j)
+        {
+            int actualValue = dataHeight - (i + 1);
 
             if (data[j].top - data[j].bottom > 0)
                 letter = '#';
             else
                 letter = '0';
 
-            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom)) {
+            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom))
+            {
                 file << letter;
             }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
             {
                 file << '|';
-            }
-            else {
+            }else
+            {
                 file << ' ';
             }
         }
