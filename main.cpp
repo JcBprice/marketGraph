@@ -11,9 +11,10 @@ struct Candlestick {
     int year, month, day, wick, top, bottom, shadow, index;
 };
 
-void menu(string& fileName, string& graphName, int& dataHeight);
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight);
+void menu(string& fileName, string& graphName, int& dataHeight, char& letter);
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter);
 void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int range = 200);
+void showgraph(const Candlestick* data, int dataSize, int dataHeight, int range = 200);
 void cleanupData(Candlestick*& data);
 
 int main() {
@@ -22,30 +23,65 @@ int main() {
     string fileName = "intc_us_data.csv";
     string graphName = "graph.txt";
     int dataHeight = 50;
+    int range;
+    char letter;
+
+    while(letter != 'q' || letter != 'Q')
+    {
+        menu(fileName, graphName, dataHeight, letter);
+        loadDataFromFile(stockData, dataSize, fileName, dataHeight, letter);
+
+        // Wywo³aj funkcjê generuj¹c¹ wykres
+        generateCandlestickChart(stockData, dataSize, graphName, dataHeight);
 
 
-    menu(fileName, graphName, dataHeight);
-    loadDataFromFile(stockData, dataSize, fileName, dataHeight);
 
-    // WywoÅ‚aj funkcjÄ™ generujÄ…cÄ… wykres
-    generateCandlestickChart(stockData, dataSize, graphName, dataHeight);
+        range = 200;
+        if(letter == 't')
+        {
+            showgraph(stockData, dataSize, dataHeight, range);
+        }
+        cout << "Naciœnij Enter, aby kontynuowaæ...";
+        cin.ignore();
+        cin.get();
+        system("cls");
 
-    // Zwolnij pamiÄ™Ä‡
-    cleanupData(stockData);
+        // Zwolnij pamiêæ
+        cleanupData(stockData);
+
+
+    }
+
 
     return 0;
+
+
+
+
 }
 
-void menu(string& fileName, string& graphName, int& dataHeight) {
+
+
+void menu(string& fileName, string& graphName, int& dataHeight, char& letter) {
     cout << "-----------------------------marketGraph-----------------------------\n\n\n\n\n";
-    cout << "If you want to see default graph \"intc_us_data.csv\" type: \'D\'/\'d\' or \"Default\"/\"default\".\n";
+    cout << "If you want to see default graph \"intc_us_data.csv\" type: \'G\' or \'g\'\n";
     cout << "Type file name: ";    cin >> fileName;
-    if(fileName == "d" || fileName == "D" || fileName == "default" || fileName == "Default")
+    if(fileName == "g" || fileName == "G")
     {
+        letter = 'g';
         fileName = "intc_us_data.csv";
         graphName = "graph.txt";
-        cout << "Type graph height [default = 50]:"; cin >> dataHeight;
-
+        cout << "Type graph height [default = 50]: "; cin >> dataHeight;
+    }
+    else if(fileName == "t" || fileName == "T")
+    {
+        letter = 't';
+        fileName = "intc_us_data.csv";
+        graphName = "graph.txt";
+    }
+    else if(fileName == "q" || fileName == "Q")
+    {
+        letter = 'q';
     }
     else
     {
@@ -55,22 +91,21 @@ void menu(string& fileName, string& graphName, int& dataHeight) {
 }
 
 
-
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight) {
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter) {
     fstream file;
     file.open(fileName, ios::in);
 
     bool isOpen = file.is_open();
 
-    if (!isOpen) {
-        cout << "BÅ‚Ä…d otwarcia pliku." << endl;
+    if (!isOpen && letter !='q') {
+        cout << "File opening error!" << endl;
         return;
     }
 
     string line;
     dataSize = 0;
     // Wczytaj dane z pliku CSV
-    getline(file, line); // Pomijamy nagÅ‚Ã³wek
+    getline(file, line); // Pomijamy nag³ówek
 
     while (getline(file, line))
     {
@@ -78,7 +113,7 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int da
     }
 
     file.clear();
-    file.seekg(0, ios::beg); // PrzewiÅ„ na poczÄ…tek pliku
+    file.seekg(0, ios::beg); // Przewiñ na pocz¹tek pliku
 
     data = new Candlestick[dataSize + 1];
 
@@ -125,12 +160,12 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int da
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].low = stod(buf) * (dataHeight / 50);
+        data[index].low = stod(buf) * (dataHeight / 50.);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        data[index].close = stod(buf) * (dataHeight / 50);
+        data[index].close = stod(buf) * (dataHeight / 50.);
 
         getline(ss, value, ',');
         strncpy(buf, value.c_str(), sizeof(buf) - 1);
@@ -183,6 +218,44 @@ void generateCandlestickChart(const Candlestick* data, int dataSize, string grap
     }
 }
 
+void showgraph(const Candlestick* data, int dataSize, int dataHeight, int range)
+{
+
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+
+    char letter;
+
+    for (int i = 0; i < dataHeight; ++i)
+    {
+        for (int j = dataSize - range; j + 1 < dataSize; ++j)
+        {
+            int actualValue = dataHeight - (i + 1);
+
+            if (data[j].top - data[j].bottom > 0)
+                letter = '#';
+            else
+                letter = '0';
+
+            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom))
+            {
+                cout << letter;
+            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
+            {
+                cout << '|';
+            }else
+            {
+                cout << ' ';
+            }
+        }
+        cout << endl;
+
+    }
+
+}
 
 void cleanupData(Candlestick*& data) {
     delete[] data;
