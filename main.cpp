@@ -12,6 +12,7 @@ struct Candlestick {
     int year, month, day, wick, top, bottom, shadow, index;
 };
 void clear();
+void logFile(const string& action, const string& words);
 void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bool& firstLoop, unsigned int& counter, bool & isType);
 void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter, int& h_w, int& h_oc, int& l_s, int& l_oc);
 void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int& h_w, int& h_oc, int& l_s, int& l_oc, int range = 200);
@@ -71,6 +72,25 @@ void clear()
 #endif
 }
 
+void logFile(const string& action, const string& words)
+{
+    ofstream logFile("user_actions.log", ios::app);
+    if (logFile.is_open()) {
+        time_t now = time(NULL);
+        tm* timeinfo = localtime(&now);
+        char buffer[80];
+        strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S] ", timeinfo);
+        if(action != "0")
+            logFile << buffer << action << endl;
+        if(words != "0")
+            logFile << buffer << words << endl;
+        logFile.close();
+
+    } else {
+        cout << "Error opening log file." << endl;
+    }
+
+}
 
 void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bool& firstLoop, unsigned int& counter, bool& isType) {
 
@@ -83,6 +103,7 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
         {
             cout << "Type .csv file name: ";
             cin >> fileName;
+            logFile("0","User typed file name: " + fileName);
 
             if (fileName == "g" || fileName == "g")
                 break;
@@ -98,6 +119,7 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
         {
             cout << "Type .txt file name: ";
             cin >> graphName;
+            logFile("0","User typed graph name: " + graphName);
             counter = 0;
 
             if (graphName.size() > 4 && graphName.substr(graphName.size() - 4) == ".txt" )
@@ -110,6 +132,10 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
         {
             cout << "Type chart height [default = 50]: ";     cin >> dataHeight;
             counter++;
+            string buf;
+            ostringstream oss;
+            oss << dataHeight;
+            logFile("0", "User typed data height: " + oss.str());
         }
         isType = true;
 
@@ -127,6 +153,7 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
 
         do{
             cout << "Type: "; cin >> letter;
+            logFile("User typed letter: " + string(1, letter), "0");
         }while(letter != 't' && letter != 'q' && letter != 'u' && letter != 'T' && letter != 'Q' && letter != 'U');
 
     }
