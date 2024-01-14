@@ -13,14 +13,14 @@ struct Candlestick {
 };
 void clear();
 void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bool& firstLoop, unsigned int& counter, bool & isType);
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter, int& h_ws, int& h_oc, int& l_ws, int& l_oc);
-void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int range = 200);
-void showgraph(const Candlestick* data, int dataSize, int dataHeight, int range, int& h_ws, int& h_oc, int& l_ws, int& l_oc);
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter, int& h_w, int& h_oc, int& l_s, int& l_oc);
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int& h_w, int& h_oc, int& l_s, int& l_oc, int range = 200);
+void showgraph(const Candlestick* data, int dataSize, int dataHeight, int& h_w, int& h_oc, int& l_s, int& l_oc);
 void cleanupData(Candlestick*& data);
 
 int main() {
     Candlestick* stockData = nullptr;
-    int range, dataSize = 10000, dataHeight = 50, h_ws = 0, h_oc = 0, l_ws = 99999, l_oc = 99999;
+    int range, dataSize = 10000, dataHeight = 50, h_w = 0, h_oc = 0, l_s = 9999, l_oc = 9999;
     string fileName = "intc_us_data.csv", graphName = "chart.txt";
     bool isType, firstLoop = true;
     char letter;
@@ -28,21 +28,21 @@ int main() {
 
     while(letter != 'q' && letter != 'Q')
     {
-        h_ws = 0, h_oc = 0, l_ws = 99999, l_oc = 99999;
+        h_w = 0, h_oc = 0, l_s = 99999, l_oc = 99999;
 
         menu(fileName, graphName, dataHeight, letter, firstLoop, counter, isType);
-        loadDataFromFile(stockData, dataSize, fileName, dataHeight, letter, h_ws, h_oc, l_ws, l_oc);
+        loadDataFromFile(stockData, dataSize, fileName, dataHeight, letter, h_w, h_oc, l_s, l_oc);
 
 
         if(letter != 'q' && letter != 'Q')
         {
-            generateCandlestickChart(stockData, dataSize, graphName, dataHeight);
+            generateCandlestickChart(stockData, dataSize, graphName, dataHeight, h_w, h_oc, l_s, l_oc);
 
 
 
             if(letter == 't')
             {
-                showgraph(stockData, dataSize, dataHeight, range, h_ws, h_oc, l_ws, l_oc);
+                showgraph(stockData, dataSize, dataHeight, h_w, h_oc, l_s, l_oc);
             }
             cout << "Press enter to continue...";
             cin.ignore();
@@ -122,8 +122,8 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
         cout << "Type \'t\' or \'T\' to generate 200 most recent resulsts.\n";
         cout << "Type \'u\' or \'U\' to load different chart.\n";
         cout << "Type \'q\' or \'Q\' to close the program.\n\n\n";
-        cout << "Actual file: \"" << fileName << "\"\n";
-        cout << "The chart \"" << graphName << "\" has been generated\n\n";
+        cout << "Actual file: \"" << fileName << "\".\n";
+        cout << "The chart \"" << graphName << "\" has been generated.\n\n";
 
         do{
             cout << "Type: "; cin >> letter;
@@ -158,14 +158,16 @@ void menu(string& fileName, string& graphName, int& dataHeight, char& letter, bo
 }
 
 
-void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter, int& h_ws, int& h_oc, int& l_ws, int& l_oc)
+void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int dataHeight, char letter, int& h_w, int& h_oc, int& l_s, int& l_oc)
 {
+    int range = 200;
     fstream file;
     file.open(fileName, ios::in);
 
     bool isOpen = file.is_open();
 
-    if (!isOpen && letter !='q') {
+    if (!isOpen && letter !='q')
+    {
         cout << "File opening error!" << endl;
         return;
     }
@@ -248,10 +250,32 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int da
         data[index].shadow = round(data[index].low);
 
 
-        h_ws = (data[index].wick > h_ws) ? data[index].wick : h_ws;
+        if(index >= dataSize - range)
+        {
 
-        if(data[index].open > h_oc || data[index].close > h_oc)
-            h_oc = (data[index].top > data[index].bottom) ? data[index].top : data[index].bottom;
+
+            if(h_oc < data[index].bottom)
+                h_oc = data[index].bottom;
+            if(h_oc < data[index].top)
+                h_oc = data[index].top;
+
+            if(h_w < data[index].wick)
+                h_w = data[index].wick;
+
+            if(l_s > data[index].shadow)
+                l_s = data[index].shadow;
+
+            if(l_oc > data[index].top)
+                l_oc = data[index].top;
+            if(l_oc > data[index].bottom)
+                l_oc = data[index].bottom;
+
+
+
+
+
+
+        }
 
 
         index++;
@@ -260,86 +284,119 @@ void loadDataFromFile(Candlestick*& data, int& dataSize, string fileName, int da
     file.close();
 }
 
-void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int range) {
+void generateCandlestickChart(const Candlestick* data, int dataSize, string graphName, int dataHeight, int& h_w, int& h_oc, int& l_s, int& l_oc, int range) {
     char letter;
     ofstream file;
     file.open(graphName);
 
-    for (int i = 0; i < dataHeight; ++i)
+    clear();
+
+    for (int i = -1; i <= dataHeight - 1; ++i)
     {
-        int actualValue = dataHeight - (i + 1);
+        int actualValue = dataHeight - i;
 
-        for (int j = dataSize - range; j + 1 < dataSize; ++j)
+        if (actualValue == h_w || actualValue  == h_oc || actualValue == l_oc || actualValue  == l_s || actualValue == 0)
+            file << setw(7) << 50. /dataHeight * actualValue;
+        else if (i == -1)
+            file << setw(7) << "Value\n";
+        else
+            file << setw(7) << "|";
+        for (int j = dataSize - range - 1; j < dataSize && i > -1; ++j)
         {
-
 
             if (data[j].top - data[j].bottom > 0)
                 letter = '#';
             else
                 letter = '0';
 
-            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom))
+            if ((actualValue >= data[j].top && actualValue <= data[j].bottom) || (actualValue <= data[j].top && actualValue >= data[j].bottom))
             {
                 file << letter;
-            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
+            }
+            else if ((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
             {
                 file << '|';
-            }else
+            }
+            else
             {
                 file << ' ';
             }
         }
-        file << endl;
 
+        if (i == dataHeight - 1)
+        {
+            file << endl << setw(7) << "#";
+            for (int j = 1; j <= range; j++)
+                file << "-";
+        }
+        file << endl;
     }
+
+    file << setw(8) << data[dataSize - range - 1].day << "." << data[dataSize - range - 1].month << "." << data[dataSize - range - 1].year;
+    for (int i = 1; i <= range - 17; i++)
+        file << " ";
+    file << data[dataSize - 1].day << "." << data[dataSize - 1].month << "." << data[dataSize - 1].year << endl;
+
+    for (int i = 1; i <= range - 7; i++)
+        file << " ";
+    file << "Date [DD/MM/YY]\n\n";
 }
 
-void showgraph(const Candlestick* data, int dataSize, int dataHeight, int range, int& h_ws, int& h_oc, int& l_ws, int& l_oc)
+
+void showgraph(const Candlestick* data, int dataSize, int dataHeight, int& h_w, int& h_oc, int& l_s, int& l_oc)
 {
     char letter;
-    range = 200;
+    int range = 200;
 
     clear();
 
-    for (int i = -1; i < dataHeight; ++i)
+    for (int i = -1; i <= dataHeight - 1; ++i)
     {
-        if  (i == l_ws || i == l_oc || i == h_ws || i == h_oc)
-            cout << setw(3) << i;
-        else if(i == -1)
-            cout << setw(3) << "Value\n";
-        else if (i != dataHeight)
-            cout << setw(3) << "|";
-        for (int j = dataSize - range - 1; j + 1 < dataSize && i > -1; ++j)
+        int actualValue = dataHeight - i;
+
+        if (actualValue == h_w || actualValue  == h_oc || actualValue == l_oc || actualValue  == l_s || actualValue == 0)
+            cout << setw(7) << 50. /dataHeight * actualValue;
+        else if (i == -1)
+            cout << setw(7) << "Value\n";
+        else
+            cout << setw(7) << "|";
+        for (int j = dataSize - range - 1; j < dataSize && i > -1; ++j)
         {
-            int actualValue = dataHeight - (i + 1);
 
             if (data[j].top - data[j].bottom > 0)
                 letter = '#';
             else
                 letter = '0';
 
-            if ((actualValue  >= data[j].top && actualValue  <= data[j].bottom) || (actualValue  <= data[j].top && actualValue  >= data[j].bottom))
+            if ((actualValue >= data[j].top && actualValue <= data[j].bottom) || (actualValue <= data[j].top && actualValue >= data[j].bottom))
             {
                 cout << letter;
-            }else if((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
+            }
+            else if ((actualValue > data[j].top && actualValue <= data[j].wick) || (data[j].wick <= actualValue && data[j].bottom > actualValue) || (data[j].top > actualValue && data[j].shadow <= actualValue) || (data[j].bottom > actualValue && data[j].shadow <= actualValue))
             {
                 cout << '|';
-            }else
+            }
+            else
             {
                 cout << ' ';
             }
         }
 
-        if(i == dataHeight - 1)
+        if (i == dataHeight - 1)
         {
-            cout << endl << setw(3) << 0;
-            for(int j = 1; j <= range; j++)
+            cout << endl << setw(7) << "#";
+            for (int j = 1; j <= range; j++)
                 cout << "-";
         }
         cout << endl;
     }
 
-    for(int i = 1; i <= range - 6; i++)
+    cout << setw(8) << data[dataSize - range - 1].day << "." << data[dataSize - range - 1].month << "." << data[dataSize - range - 1].year;
+    for (int i = 1; i <= range - 17; i++)
+        cout << " ";
+    cout << data[dataSize - 1].day << "." << data[dataSize - 1].month << "." << data[dataSize - 1].year << endl;
+
+    for (int i = 1; i <= range - 7; i++)
         cout << " ";
     cout << "Date [DD/MM/YY]\n\n";
 
